@@ -1,0 +1,342 @@
+openapi: 3.0.0
+info:
+  title: Car Management service 
+  description: API documentation for Car Management Service
+  version: "1.0.0"
+servers:
+  - url: /api/v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: "Indicates if the operation was successful"
+          example: true
+        message:
+          type: string
+          description: "Message related to the operation"
+          example: "Operation successful"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "Error message"
+          example: "Invalid input"
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: Authentication credentials were not provided.
+    NotFound:
+      description: Resource Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: The requested resource was not found.
+    cars:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        brand:
+          type: string
+          example: Toyota
+        model_name:
+          type: string
+          example: Camry
+        year:
+          type: integer
+          example: 2020
+        price:
+          type: string
+          example: 25000.00
+        fuel_type:
+          type: string
+          example: Gasoline
+        available:
+          type: boolean
+          example: true   
+        created_at:
+          type: string
+          format: date-time   
+          example: "2023-10-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time   
+          example: "2023-10-01T12:00:00Z"   
+        deleted_at:
+          type: string
+          format: date-time   
+          example: null 
+
+    carscreate:
+      type: object
+      properties:
+        brand:
+          type: string
+          example: Toyota
+        model_name:
+          type: string
+          example: Camry
+        year:
+          type: integer
+          example: 2020
+        price:
+          type: string
+          example: 25000.00
+        fuel_type:
+          type: string
+          example: Gasoline
+        available:
+          type: boolean
+          example: true   
+
+    carsupdate:
+      type: object
+      properties:
+        brand:
+          type: string
+          example: Toyota
+        model_name:
+          type: string
+          example: Camry
+        year:
+          type: integer
+          example: 2020
+        price:
+          type: string
+          example: 25000.00
+        fuel_type:
+          type: string
+          example: Gasoline
+        available:
+          type: boolean
+          example: true           
+
+
+paths:
+  /api/token/:
+    post:
+      summary: Obtain JWT token pair (login)
+      description: Returns access and refresh tokens for valid user credentials.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                password:
+                  type: string
+                  example: mysecretpassword
+      responses:
+        '200':
+          description: Successfully obtained JWT tokens.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: Access token (short-lived)
+                  refresh:
+                    type: string
+                    description: Refresh token (long-lived)
+        '401':
+          description: Invalid credentials.
+
+  /api/token/refresh/:
+    post:
+      summary: Refresh access token
+      description: Generate a new access token using the refresh token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh
+              properties:
+                refresh:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: New access token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: New access token.
+        '401':
+          description: Invalid or expired refresh token.
+
+  /cars:
+    get:
+      tags:
+        - Cars
+      security:
+        - BearerAuth: []  
+      summary: Retrieve a list of all cars
+      description: Retrieve a list of all cars in the system.
+      responses:
+        '200':
+          description: A list of cars.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/cars'
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
+        '404':
+          $ref: '#/components/schemas/NotFound' 
+
+    post:
+      tags:
+        - Cars
+      security:
+        - BearerAuth: []  
+      summary: Create a new car
+      description: Create a new car with the provided details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/carscreate'
+      responses:
+        '201':
+          description: Car created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cars'
+        '400':
+          $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
+
+  /cars/{id}: 
+    get:
+      tags:
+        - Cars
+      security:
+        - BearerAuth: []    
+      summary: Retrieve a specific car by ID
+      description: Retrieve details of a specific car using its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Car details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cars'
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
+        '404':
+          $ref: '#/components/schemas/NotFound' 
+
+    put:
+      tags:
+        - Cars
+      security:
+        - BearerAuth: []  
+      summary: Update a specific car by ID
+      description: Update the details of a specific car using its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/carsupdate'
+      responses:
+        '200':
+          description: Car updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cars'
+        '400':
+          $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
+        '404':
+          $ref: '#/components/schemas/NotFound'   
+
+    delete:
+      tags:
+        - Cars
+      security:
+        - BearerAuth: []    
+      summary: Delete a specific car by ID
+      description: Delete a specific car from the system using its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Car deleted successfully.
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
+        '404':
+          $ref: '#/components/schemas/NotFound'                             
